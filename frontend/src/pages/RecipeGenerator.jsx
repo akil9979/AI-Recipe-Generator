@@ -41,7 +41,6 @@ const RecipeGenerator = () => {
   const [generating, setGenerating] = useState(false);
   const [generatedRecipe, setGeneratedRecipe] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   // Load user preferences on component mount
   // Load user preferences on component mount
@@ -75,11 +74,8 @@ const RecipeGenerator = () => {
           }
         }
 
-        setPreferencesLoaded(true);
       } catch (error) {
         console.error("Failed to load user preferences:", error);
-
-        setPreferencesLoaded(true);
       }
     };
 
@@ -154,7 +150,7 @@ const RecipeGenerator = () => {
       });
 
       toast.success("Recipe saved to your collection!");
-    } catch (error) {
+    } catch {
       toast.error("Failed to save recipe");
     } finally {
       setSaving(false);

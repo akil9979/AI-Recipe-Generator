@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Plus, Search, X, Calendar, AlertCircle } from "lucide-react";
 import Navbar from "../components/Navbar";
 import toast from "react-hot-toast";
@@ -17,45 +17,40 @@ const CATEGORIES = [
 
 const Pantry = () => {
   const [items, setItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [expiringItems, setExpiringItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchPantryItems();
-    fetchExpiringItems();
-  }, []);
-
-  const fetchPantryItems = async () => {
+  const fetchPantryItems = useCallback(async () => {
     try {
       const response = await api.get("/pantry");
 
       setItems(response.data.data.items);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load pantry items");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchExpiringItems = async () => {
+  const fetchExpiringItems = useCallback(async () => {
     try {
       const response = await api.get("/pantry/expiring-soon?days=7");
 
       setExpiringItems(response.data.data.items);
-    } catch (error) {
+    } catch {
       console.error("Failed to load expiring items");
     }
-  };
+  }, []);
 
   useEffect(() => {
-    filterItems();
-  }, [items, searchQuery, selectedCategory]);
+    fetchPantryItems();
+    fetchExpiringItems();
+  }, [fetchPantryItems, fetchExpiringItems]);
 
-  const filterItems = () => {
+  const filteredItems = useMemo(() => {
     let filtered = items;
 
     if (searchQuery) {
@@ -68,8 +63,8 @@ const Pantry = () => {
       filtered = filtered.filter((item) => item.category === selectedCategory);
     }
 
-    setFilteredItems(filtered);
-  };
+    return filtered;
+  }, [items, searchQuery, selectedCategory]);
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this item?")) {
@@ -82,7 +77,7 @@ const Pantry = () => {
       setItems(items.filter((item) => item.id !== id));
 
       toast.success("Item deleted");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete item");
     }
   };
@@ -196,7 +191,7 @@ const Pantry = () => {
       {showAddModal && (
         <AddItemModal
           onClose={() => setShowAddModal(false)}
-          onSuccess={(newItem) => {
+          onSuccess={() => {
             fetchPantryItems();
             fetchExpiringItems();
           }}
@@ -298,7 +293,7 @@ const AddItemModal = ({ onClose, onSuccess }) => {
 
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch {
       toast.error("Failed to add item");
     } finally {
       setLoading(false);

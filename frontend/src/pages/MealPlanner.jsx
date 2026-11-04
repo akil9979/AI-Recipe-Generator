@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Calendar as CalendarIcon, Plus, X, ChefHat } from "lucide-react";
 import Navbar from "../components/Navbar";
 import toast from "react-hot-toast";
-import { format, startOfWeek, addDays, set } from "date-fns";
+import { format, startOfWeek, addDays } from "date-fns";
 import api from "../services/api";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner"];
@@ -22,14 +22,7 @@ const MealPlanner = () => {
   const [recipes, setRecipes] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchMealPlan();
-    fetchRecipes();
-  }, [weekStart]);
-
-  const fetchMealPlan = async () => {
+  const fetchMealPlan = useCallback(async () => {
     try {
       const startDate = format(weekStart, "yyyy-MM-dd");
       const endDate = format(addDays(weekStart, 6), "yyyy-MM-dd");
@@ -54,21 +47,27 @@ const MealPlanner = () => {
       });
 
       setMealPlan(organized);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load meal plan");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [weekStart]);
 
-  const fetchRecipes = async () => {
+  const fetchRecipes = useCallback(async () => {
     try {
       const response = await api.get("/recipes");
       setRecipes(response.data.data);
-    } catch (error) {
+    } catch {
       console.error("Failed to load recipes");
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const loadPlannerData = async () => {
+      await Promise.all([fetchMealPlan(), fetchRecipes()]);
+    };
+
+    loadPlannerData();
+  }, [fetchMealPlan, fetchRecipes]);
 
   const handleAddMeal = (date, mealType) => {
     setSelectedSlot({ date, mealType });
@@ -82,7 +81,7 @@ const MealPlanner = () => {
       await api.delete(`/meal-plans/${mealId}`);
       await fetchMealPlan();
       toast.success("Meal removed");
-    } catch (error) {
+    } catch {
       toast.error("Failed to remove meal");
     }
   };
@@ -279,7 +278,7 @@ const AddMealModal = ({ date, mealType, recipes, onClose, onSuccess }) => {
       toast.success("Meal added to plan");
 
       onSuccess(response.data.data.mealPlan);
-    } catch (error) {
+    } catch {
       toast.error("Failed to add meal");
     } finally {
       setLoading(false);

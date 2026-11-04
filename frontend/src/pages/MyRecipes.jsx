@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Search, Clock, ChefHat, Trash2 } from "lucide-react";
 import Navbar from "../components/Navbar";
@@ -7,7 +7,6 @@ import api from "../services/api";
 
 const MyRecipes = () => {
   const [recipes, setRecipes] = useState([]);
-  const [filteredRecipes, setFilteredRecipes] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
@@ -27,28 +26,22 @@ const MyRecipes = () => {
   ];
   const difficulties = ["All", "easy", "medium", "hard"];
 
-  useEffect(() => {
-    fetchRecipes();
-  }, []);
-
-  useEffect(() => {
-    filterRecipes();
-  }, [recipes, searchQuery, selectedCuisine, selectedDifficulty]);
-
-  const fetchRecipes = async () => {
+  const fetchRecipes = useCallback(async () => {
     try {
       const response = await api.get("/recipes");
       setRecipes(response.data.data);
-    } catch (error) {
-      console.error(error);
-
+    } catch {
       toast.error("Failed to load recipes");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const filterRecipes = () => {
+  useEffect(() => {
+    fetchRecipes();
+  }, [fetchRecipes]);
+
+  const filteredRecipes = useMemo(() => {
     let filtered = recipes;
 
     if (searchQuery) {
@@ -71,8 +64,8 @@ const MyRecipes = () => {
       );
     }
 
-    setFilteredRecipes(filtered);
-  };
+    return filtered;
+  }, [recipes, searchQuery, selectedCuisine, selectedDifficulty]);
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this recipe?")) return;
@@ -83,7 +76,7 @@ const MyRecipes = () => {
       setRecipes(recipes.filter((recipe) => recipe.id !== id));
 
       toast.success("Recipe deleted");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete recipe");
     }
   };

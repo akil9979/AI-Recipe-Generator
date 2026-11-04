@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { User, Lock, Trash2, Save } from "lucide-react";
 import Navbar from "../components/Navbar";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
@@ -31,7 +31,6 @@ const Settings = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   // Profile state
   const [profile, setProfile] = useState({
@@ -56,35 +55,33 @@ const Settings = () => {
   });
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await api.get("/users/profile");
+
+        const { user, preferences: userPrefs } = response.data.data;
+
+        setProfile({
+          name: user.name,
+          email: user.email,
+        });
+
+        if (userPrefs) {
+          setPreferences({
+            dietary_restrictions: userPrefs.dietary_restrictions || [],
+            allergies: userPrefs.allergies || [],
+            preferred_cuisines: userPrefs.preferred_cuisines || [],
+            default_servings: userPrefs.default_servings || 4,
+            measurement_unit: userPrefs.measurement_unit || "metric",
+          });
+        }
+      } catch {
+        toast.error("Failed to load user data");
+      }
+    };
+
     fetchUserData();
   }, []);
-
-  const fetchUserData = async () => {
-    try {
-      const response = await api.get("/users/profile");
-
-      const { user, preferences: userPrefs } = response.data.data;
-
-      setProfile({
-        name: user.name,
-        email: user.email,
-      });
-
-      if (userPrefs) {
-        setPreferences({
-          dietary_restrictions: userPrefs.dietary_restrictions || [],
-          allergies: userPrefs.allergies || [],
-          preferred_cuisines: userPrefs.preferred_cuisines || [],
-          default_servings: userPrefs.default_servings || 4,
-          measurement_unit: userPrefs.measurement_unit || "metric",
-        });
-      }
-    } catch (error) {
-      toast.error("Failed to load user data");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -99,7 +96,7 @@ const Settings = () => {
       // Update local storage
       const updatedUser = { ...user, ...profile };
       localStorage.setItem("user", JSON.stringify(updatedUser));
-    } catch (error) {
+    } catch {
       toast.error("Failed to update profile");
     } finally {
       setSaving(false);
@@ -115,7 +112,7 @@ const Settings = () => {
       await api.put("/users/preferences", preferences);
 
       toast.success("Preferences updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update preferences");
     } finally {
       setSaving(false);
@@ -179,7 +176,7 @@ const Settings = () => {
 
       logout();
       navigate("/login");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete account");
     }
   };

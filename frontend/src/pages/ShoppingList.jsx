@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ShoppingCart, Plus, X, Check, Trash2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import toast from "react-hot-toast";
@@ -16,15 +16,10 @@ const CATEGORIES = [
 
 const ShoppingList = () => {
   const [items, setItems] = useState([]);
-  const [groupedItems, setGroupedItems] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchShoppingList();
-  }, []);
-
-  const fetchShoppingList = async () => {
+  const fetchShoppingList = useCallback(async () => {
     try {
       const response = await api.get("/shopping-list?grouped=true");
 
@@ -43,25 +38,30 @@ const ShoppingList = () => {
       });
 
       setItems(flatItems);
-      organizeByCategory(flatItems);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load shopping list");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const organizeByCategory = (itemsList) => {
+  const groupedItems = useMemo(() => {
     const grouped = {};
-    itemsList.forEach((item) => {
-      const category = item.category || "Other";
-      if (!grouped[category]) {
-        grouped[category] = [];
-      }
-      grouped[category].push(item);
-    });
-    setGroupedItems(grouped);
-  };
+    items
+      .filter((item) => item && typeof item === "object")
+      .forEach((item) => {
+        const category = item.category || "Uncategorized";
+        if (!grouped[category]) {
+          grouped[category] = [];
+        }
+        grouped[category].push(item);
+      });
+    return grouped;
+  }, [items]);
+
+  useEffect(() => {
+    fetchShoppingList();
+  }, [fetchShoppingList]);
 
   const handleToggleChecked = async (id) => {
     // UI-only toggle (optimistic update)
@@ -70,11 +70,10 @@ const ShoppingList = () => {
     );
 
     setItems(updatedItems);
-    organizeByCategory(updatedItems);
 
     try {
       await api.put(`/shopping-list/${id}/toggle`);
-    } catch (error) {
+    } catch {
       toast.error("Failed to update item");
     }
   };
@@ -85,10 +84,9 @@ const ShoppingList = () => {
 
       const updatedItems = items.filter((item) => item.id !== id);
       setItems(updatedItems);
-      organizeByCategory(updatedItems);
 
       toast.success("Item removed");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete item");
     }
   };
@@ -101,10 +99,9 @@ const ShoppingList = () => {
 
       const updatedItems = items.filter((item) => !item.is_checked);
       setItems(updatedItems);
-      organizeByCategory(updatedItems);
 
       toast.success("Checked items cleared");
-    } catch (error) {
+    } catch {
       toast.error("Failed to clear items");
     }
   };
@@ -124,10 +121,8 @@ const ShoppingList = () => {
       const updatedItems = items.filter((item) => !item.is_checked);
       setItems(updatedItems);
 
-      organizeByCategory(updatedItems);
-
       toast.success("Items added to pantry");
-    } catch (error) {
+    } catch {
       toast.error("Failed to add items to pantry");
     }
   };
@@ -237,10 +232,9 @@ const ShoppingList = () => {
         <AddItemModal
           onClose={() => setShowAddModal(false)}
           onSuccess={(newItem) => {
-            // Add to local state
-            const updatedItems = [...items, newItem];
-            setItems(updatedItems);
-            organizeByCategory(updatedItems);
+            if (!newItem || typeof newItem !== "object") return;
+
+            setItems((previousItems) => [...previousItems, newItem]);
             setShowAddModal(false);
           }}
         />
@@ -307,16 +301,16 @@ const AddItemModal = ({ onClose, onSuccess }) => {
     setLoading(true);
 
     try {
-      await api.post("/shopping-list", {
+      const response = await api.post("/shopping-list", {
         ...formData,
         quantity: parseFloat(formData.quantity),
       });
 
       toast.success("Item added to shopping list");
 
-      onSuccess();
+      onSuccess(response.data.data.item);
       onClose();
-    } catch (error) {
+    } catch {
       toast.error("Failed to add item");
     } finally {
       setLoading(false);

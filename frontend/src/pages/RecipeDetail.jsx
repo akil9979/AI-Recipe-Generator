@@ -21,24 +21,24 @@ const RecipeDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchRecipe = async () => {
+      try {
+        const response = await api.get(`/recipes/${id}`);
+
+        const recipeData = response.data.data;
+
+        setRecipe(recipeData);
+        setServings(recipeData.servings || 4);
+      } catch {
+        toast.error("Failed to load recipe");
+        navigate("/recipes");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchRecipe();
-  }, [id]);
-
-  const fetchRecipe = async () => {
-    try {
-      const response = await api.get(`/recipes/${id}`);
-
-      const recipeData = response.data.data;
-
-      setRecipe(recipeData);
-      setServings(recipeData.servings || 4);
-    } catch (error) {
-      toast.error("Failed to load recipe");
-      navigate("/recipes");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [id, navigate]);
 
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this recipe?")) return;
@@ -49,7 +49,7 @@ const RecipeDetail = () => {
       toast.success("Recipe deleted");
 
       navigate("/recipes");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete recipe");
     }
   };
