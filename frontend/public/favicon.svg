@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <!-- Lid -->
+  <path
+    d="M4 8L20 4"
+    stroke="#312E81"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Pot Top -->
+  <path
+    d="M2 12H20"
+    stroke="#312E81"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Pot Body -->
+  <rect
+    x="4"
+    y="12"
+    width="16"
+    height="10"
+    rx="2"
+    fill="url(#potGradient)"
+    stroke="#312E81"
+    stroke-width="2"
+  />
+
+  <!-- Handles -->
+  <rect
+    x="1"
+    y="13"
+    width="3"
+    height="3"
+    rx="1"
+    fill="#2DD4BF"
+    stroke="#312E81"
+    stroke-width="1"
+  />
+
+  <rect
+    x="20"
+    y="13"
+    width="3"
+    height="3"
+    rx="1"
+    fill="#2DD4BF"
+    stroke="#312E81"
+    stroke-width="1"
+  />
+
+  <!-- Lid Handle -->
+  <rect
+    x="10"
+    y="2"
+    width="4"
+    height="2"
+    rx="0.5"
+    fill="#2DD4BF"
+    stroke="#312E81"
+    stroke-width="1"
+  />
+
+  <!-- Lid -->
+  <path
+    d="M5 8H19"
+    stroke="#A855F7"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+
+  <!-- Gradient -->
+  <defs>
+    <linearGradient id="potGradient" x1="4" y1="12" x2="20" y2="22">
+      <stop offset="0%" stop-color="#FACC15" />
+      <stop offset="100%" stop-color="#F97316" />
+    </linearGradient>
+  </defs>
+</svg>
